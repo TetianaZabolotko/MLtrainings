@@ -41,24 +41,32 @@ def split_train_test(data, test_ratio):
     return data.iloc[train_indices], data.iloc[test_indices]
 
 if __name__ == "__main__":
-    # fetch_housing_data()
+    #fetch_housing_data()
     housing = load_housing_data()
     df = housing.head()
+
+    #show data in table using tabulate()
     print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
+
+    #The info() method is useful to get a quick description of the data
     housing.info()
-
     print()
-    print("housing ['ocean_proximity'].value_counts()")
+
+    #You can find out what categories exist and how many districts 
+    # belong to each category by using the value_counts() method
     print(housing["ocean_proximity"].value_counts())
-
     print()
-    print("housing.describe()")
+
+    #The describe() method shows a summary of the numerical attributes
+    #The 25%, 50%, and 75% rows show the corresponding percentiles: a percentile 
+    #indicates the value below which a given percentage of observations in a group of 
+    #observations falls. For example, 25% of the districts have a housing_median_age lower than
+    #while 50% are lower than 29 and 75% are lower than 37
     print(housing.describe())
-
     print()
-    print("housing ['ocean_proximity'].value_counts()")
-    print(housing["housing_median_age"].value_counts())
-
+    
+    #A histogram shows the number of instances (on the vertical axis) 
+    # that have a given value range (on the horizontal axis).
     housing.hist(bins=50, figsize=(20,15))
     # plt.show()
 
