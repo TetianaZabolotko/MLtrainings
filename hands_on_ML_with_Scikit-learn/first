@@ -9,6 +9,7 @@ import numpy as np
 import hashlib
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedShuffleSplit
+from pandas.plotting import scatter_matrix
 
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml/master/"
 HOUSING_PATH = "datasets/housing"
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     
     #A histogram shows the number of instances (on the vertical axis) 
     # that have a given value range (on the horizontal axis).
-    housing.hist(bins=50, figsize=(20,15))
+    # housing.hist(bins=50, figsize=(20,15))
     # plt.show()
 
     # When you estimate the generalization error using the test
@@ -100,20 +101,34 @@ if __name__ == "__main__":
     # train_set, test_set = split_train_test_by_id(housing_with_id, 0,2, 'id')
     # print(housing_with_id['id'])
 
-    # print("Hash_key")
-    # disc = hashlib.md5(np.int64(housing_with_id['index'][56])).digest()
-    # len_ = len(hashlib.md5(np.int64(housing_with_id['index'][56])).digest())
-    # key1 = hashlib.md5(np.int64(housing_with_id['index'][56])).digest()[10]
 
-    # in_test_set = housing_with_id['id'].apply(lambda id_: test_set_check(id_, 0.2, hashlib.md5))
-    # # for i in in_test_set:
-    #     print(i)
-    # print(in_test_set)
-    # [-1] < 256*0,2
-    # print(disc)
-    # print(len_)
-    # print(key1)
+    train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+    # we have considered purely random sampling methods. This is generally fine if
+    # your dataset is large enough (especially relative to the number of attributes), but if it
+    # is not, you run the risk of introducing a significant sampling bias.
 
+
+
+    # When a survey company decides to call 1,000 people to ask them a few questions, they don’t just pick
+    # 1,000 people randomly in a phone booth. They try to ensure that these 1,000 people
+    # are representative of the whole population. For example, the US population is com‐
+    # posed of 51.3% female and 48.7% male, so a well-conducted survey in the US would
+    # try to maintain this ratio in the sample: 513 female and 487 male. This is called strati‐
+    # fied sampling: the population is divided into homogeneous subgroups called strata,
+    # and the right number of instances is sampled from each stratum to guarantee that the
+    # test set is representative of the overall population.
+
+
+
+    #  median income is a very important attribute to predict median housing prices
+    # to ensure that the test set is representative of the various categories of incomes in the whole dataset
+
+    # important to have a sufficient number of instances in your dataset for each stratum
+
+    # The following code creates an income category
+    # attribute by dividing the median income by 1.5 (to limit the number of income cate‐
+    # gories), and rounding up using ceil (to have discrete categories), and then merging
+    # all the categories greater than 5 into category 5:
     housing['income_cat'] = np.ceil(housing['median_income']/1.5)
     housing['income_cat'].where(housing['income_cat'] < 5, 5, inplace=True)
     # print(housing['income_cat'])
@@ -123,28 +138,62 @@ if __name__ == "__main__":
         strat_train_set = housing.loc[train_index]
         strat_test_set = housing.loc[test_index]
 
-    print(strat_test_set['income_cat'].value_counts()/len(strat_test_set))
-    print(housing['income_cat'].value_counts()/len(housing))
+    # income category proportions in the full housing dataset:
+    # print(strat_test_set['income_cat'].value_counts()/len(strat_test_set))
+    # print(housing['income_cat'].value_counts()/len(housing))
 
-    # for set in(strat_test_set, strat_test_set):
-    #     set.drop(['income_cat'], axis=1, inplace=True)
+    # remove the income_cat attribute so the data is back to its original state
+    # for set in(strat_train_set, strat_test_set):
+    #   set.drop(['income_cat'], axis=1, inplace=True)
 
 
     # Discover and Visualize the Data to Gain Insights
+
+    # create a copy so you can play with it without harming the training set
     housing = strat_train_set.copy()
     
-    #pandas plots documentation https://pandas.pydata.org/pandas-docs/version/0.15.0/visualization.html
+    # pandas plots documentation https://pandas.pydata.org/pandas-docs/version/0.15.0/visualization.html
     # housing.plot(kind='scatter', x='longitude', y='latitude')
-    # plt.show()
+    
+    # Setting the alpha option to 0.1 makes it much easier to visualize the places
+    # where there is a high density of data points 
+    # housing.plot(kind='scatter', x='longitude', y='latitude', alpha=0.1)
 
     
-    # housing.plot(kind='scatter', x='longitude', y='latitude', alpha=0.1)
+    # The radius of each circle represents the district’s population (option s), 
+    # and the color represents the price (option c). We
+    # will use a predefined color map (option cmap) called jet, which ranges from blue
+    # (low values) to red (high prices)
+    # housing.plot(kind='scatter', x='longitude', y='latitude', alpha=0.4,
+    # s=housing['population']/100, label='population',
+    # c='median_house_value', cmap=plt.get_cmap('jet'), colorbar=True)
+    # plt.legend()
     # plt.show()
 
-    from pandas import DataFrame
-    randn = np.random.randn
-    df = DataFrame(randn(50, 4), columns=['a', 'b', 'c', 'd'])
-    print(df.head())
+    # Looking for Correlations
 
-    df.plot(kind='scatter', x='a', y='b')
+    # dataset is not too large, you can easily compute the standard correlation
+    # coefficient (also called Pearson’s r) between every pair of attributes using the corr() method
+    corr_matrix = housing.corr()
+    # print(corr_matrix)
+    print(corr_matrix['total_rooms'].sort_values(ascending=False))
+    # The correlation coefficient ranges from –1 to 1. When it is close to 1, it means that
+    # there is a strong positive correlation; for example, the median house value tends 
+    # to go up when the median income goes up.
+    # When the coefficient is close to –1, it means that there is a strong negative correlation
+    # Finally, coefficients close to zero mean that there is no linear correlation
+
+
+    # Another way to check for correlation between attributes is to use Pandas’
+    # scatter_matrix function
+    
+
+    attributes = ["median_house_value", "median_income", "total_rooms",
+    "housing_median_age"]
+    # scatter_matrix(housing[attributes], figsize=(12, 8))
+    # plt.show()
+
+    # The most promising attribute to predict the median house value is the median
+    # income, so let’s zoom in on their correlation scatterplot 
+    housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
     plt.show()
