@@ -170,58 +170,102 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-    # Looking for Correlations
+    # # Looking for Correlations
+    # # --------------------------------------------------
 
-    # dataset is not too large, you can easily compute the standard correlation
-    # coefficient (also called Pearson’s r) between every pair of attributes using the corr() method
-    corr_matrix = housing.corr()
-    # print(corr_matrix)
-    print(corr_matrix['total_rooms'].sort_values(ascending=False))
-    # The correlation coefficient ranges from –1 to 1. When it is close to 1, it means that
-    # there is a strong positive correlation; for example, the median house value tends 
-    # to go up when the median income goes up.
-    # When the coefficient is close to –1, it means that there is a strong negative correlation
-    # Finally, coefficients close to zero mean that there is no linear correlation
+    # # dataset is not too large, you can easily compute the standard correlation
+    # # coefficient (also called Pearson’s r) between every pair of attributes using the corr() method
+    # corr_matrix = housing.corr()
+    # # print(corr_matrix)
+    # print(corr_matrix['total_rooms'].sort_values(ascending=False))
+    # # The correlation coefficient ranges from –1 to 1. When it is close to 1, it means that
+    # # there is a strong positive correlation; for example, the median house value tends 
+    # # to go up when the median income goes up.
+    # # When the coefficient is close to –1, it means that there is a strong negative correlation
+    # # Finally, coefficients close to zero mean that there is no linear correlation
 
 
-    # Another way to check for correlation between attributes is to use Pandas’
-    # scatter_matrix function
+    # # Another way to check for correlation between attributes is to use Pandas’
+    # # scatter_matrix function
     
-
-    attributes = ["median_house_value", "median_income", "total_rooms",
-    "housing_median_age"]
+    # attributes = ["median_house_value", "median_income", "total_rooms",
+    # "housing_median_age"]
     # scatter_matrix(housing[attributes], figsize=(12, 8))
     # plt.show()
 
-    # The most promising attribute to predict the median house value is the median
-    # income, so let’s zoom in on their correlation scatterplot 
+    # # The most promising attribute to predict the median house value is the median
+    # # income, so let’s zoom in on their correlation scatterplot 
     # housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
     # plt.show()
 
 
-    # Experimenting with Attribute Combinations
+    # # Experimenting with Attribute Combinations
+    # # --------------------------------------------------
 
-    # to try out various attribute combinations.
-    housing['rooms_per_household'] = housing['total_rooms']/housing['households']
-    housing['bedrooms_per_room'] = housing['total_bedrooms']/housing['total_rooms']
-    housing['population_per_household'] = housing['population']/housing['households']
+    # # to try out various attribute combinations.
+    # housing['rooms_per_household'] = housing['total_rooms']/housing['households']
+    # housing['bedrooms_per_room'] = housing['total_bedrooms']/housing['total_rooms']
+    # housing['population_per_household'] = housing['population']/housing['households']
 
-    corr_matrix = housing.corr()
-    print('median_house_value')
-    print(corr_matrix['median_income'].sort_values())
+    # corr_matrix = housing.corr()
+    # print('median_house_value')
+    # print(corr_matrix['median_income'].sort_values())
 
-    attributes = ["median_house_value", "median_income", "population_per_household",
-    "bedrooms_per_room", 'rooms_per_household']
-    scatter_matrix(housing[attributes], figsize=(12, 8))
-    plt.show()
+    # attributes = ["median_house_value", "median_income", "population_per_household",
+    # "bedrooms_per_room", 'rooms_per_household']
+    # scatter_matrix(housing[attributes], figsize=(12, 8))
+    # plt.show()
 
 
-    # Prepare the Data for Machine Learning Algorithms
+    # # PREPARING THE DATA FOR MACHINE LEARNING ALGORITHMS
+    # # --------------------------------------------------
+    # # --------------------------------------------------
 
-    # separate the predictors and the labels
-    housing = strat_train_set.drop('median_house_value', axis=1)
-    housing_labels = strat_train_set['median_house_value'].copy()
+    # # separate the predictors and the labels
+    # housing = strat_train_set.drop('median_house_value', axis=1)
+    # housing_labels = strat_train_set['median_house_value'].copy()
 
+
+    # # Data Cleaning
+    # # --------------------------------------------------
+
+    # # total_bedrooms attribute has some missing values, so let’s fix this
+
+    # # Option 1: Get rid of the corresponding districts
+    # housing.dropna(subset='total_bedrooms')
+
+    # # Option 2: Get rid of the whole attribute
+    # housing.drop("total_bedrooms", axis=1)
+
+    # # Option 3: Set the values to some value (zero, the mean, the median...)
+    # median = housing['total_bedrooms'].median
+    # housing['total_bedrooms'].fillna(median)
+    # # don’t forget to save the median value, it was computed on training set
+    # # need it later to replace missing values in the test set for evaluation your system
    
+    # Scikit-Learn provides a handy class to take care of missing values: Imputer
+    from sklearn.impute import SimpleImputer 
+    imputer = SimpleImputer(missing_values=np.nan, strategy='median')
+
+    # median can only be computed on numerical attributes, we need to create a
+    # copy of the data without the text attribute ocean_proximity: 
+    housing_num = housing.drop("ocean_proximity", axis=1)
+
+    # fit the imputer instance to the training data using the fit() method
+    imputer.fit(housing_num)
+    # The imputer has simply computed the median of each attribute and stored the result
+    # in its statistics_ instance variable
+    print(imputer.statistics_)
+    print(housing_num.median().values)
+
+    # use this “trained” imputer to transform the training set by replacing
+    # missing values by the learned medians:
+    X = imputer.transform(housing_num)
+    # result is a plain Numpy array containing the transformed features.
+
+    # back into a Pandas DataFrame
+    housing_tr = pd.DataFrame(X, columns=housing_num.columns)
+    housing_tr.info()
+    print(housing_tr.describe())
 
 
