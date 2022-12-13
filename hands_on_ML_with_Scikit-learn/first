@@ -195,5 +195,33 @@ if __name__ == "__main__":
 
     # The most promising attribute to predict the median house value is the median
     # income, so let’s zoom in on their correlation scatterplot 
-    housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
+    # housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
+    # plt.show()
+
+
+    # Experimenting with Attribute Combinations
+
+    # to try out various attribute combinations.
+    housing['rooms_per_household'] = housing['total_rooms']/housing['households']
+    housing['bedrooms_per_room'] = housing['total_bedrooms']/housing['total_rooms']
+    housing['population_per_household'] = housing['population']/housing['households']
+
+    corr_matrix = housing.corr()
+    print('median_house_value')
+    print(corr_matrix['median_income'].sort_values())
+
+    attributes = ["median_house_value", "median_income", "population_per_household",
+    "bedrooms_per_room", 'rooms_per_household']
+    scatter_matrix(housing[attributes], figsize=(12, 8))
     plt.show()
+
+
+    # Prepare the Data for Machine Learning Algorithms
+
+    # separate the predictors and the labels
+    housing = strat_train_set.drop('median_house_value', axis=1)
+    housing_labels = strat_train_set['median_house_value'].copy()
+
+   
+
+
