@@ -170,6 +170,10 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
+
+
+
+    # # --------------------------------------------------
     # # Looking for Correlations
     # # --------------------------------------------------
 
@@ -199,6 +203,9 @@ if __name__ == "__main__":
     # plt.show()
 
 
+
+
+    # # --------------------------------------------------
     # # Experimenting with Attribute Combinations
     # # --------------------------------------------------
 
@@ -220,71 +227,80 @@ if __name__ == "__main__":
     # plt.show()
 
 
-    # # PREPARING THE DATA FOR MACHINE LEARNING ALGORITHMS
-    # # --------------------------------------------------
-    # # --------------------------------------------------
 
-    # # separate the predictors and the labels
-    # housing = strat_train_set.drop('median_house_value', axis=1)
-    # housing_labels = strat_train_set['median_house_value'].copy()
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # PREPARING THE DATA FOR MACHINE LEARNING ALGORITHMS
+    # --------------------------------------------------
+    # --------------------------------------------------
+
+    # separate the predictors and the labels
+    housing = strat_train_set.drop('median_house_value', axis=1)
+    housing_labels = strat_train_set['median_house_value'].copy()
 
 
-    # # Data Cleaning
-    # # --------------------------------------------------
 
-    # # total_bedrooms attribute has some missing values, so let’s fix this
 
-    # # Option 1: Get rid of the corresponding districts
-    # housing.dropna(subset='total_bedrooms')
+    # --------------------------------------------------
+    # Data Cleaning, Imputer
+    # --------------------------------------------------
 
-    # # Option 2: Get rid of the whole attribute
-    # housing.drop("total_bedrooms", axis=1)
+    # total_bedrooms attribute has some missing values, so let’s fix this
 
-    # # Option 3: Set the values to some value (zero, the mean, the median...)
-    # median = housing['total_bedrooms'].median
-    # housing['total_bedrooms'].fillna(median)
-    # # don’t forget to save the median value, it was computed on training set
-    # # need it later to replace missing values in the test set for evaluation your system
+    # Option 1: Get rid of the corresponding districts
+    housing.dropna(subset='total_bedrooms')
+
+    # Option 2: Get rid of the whole attribute
+    housing.drop("total_bedrooms", axis=1)
+
+    # Option 3: Set the values to some value (zero, the mean, the median...)
+    median = housing['total_bedrooms'].median
+    housing['total_bedrooms'].fillna(median)
+    # don’t forget to save the median value, it was computed on training set
+    # need it later to replace missing values in the test set for evaluation your system
    
-    # # Scikit-Learn provides a handy class to take care of missing values: Imputer
-    # from sklearn.impute import SimpleImputer 
-    # imputer = SimpleImputer(missing_values=np.nan, strategy='median')
+    # Scikit-Learn provides a handy class to take care of missing values: Imputer
+    from sklearn.impute import SimpleImputer 
+    imputer = SimpleImputer(missing_values=np.nan, strategy='median')
 
-    # # median can only be computed on numerical attributes, we need to create a
-    # # copy of the data without the text attribute ocean_proximity: 
-    # housing_num = housing.drop("ocean_proximity", axis=1)
+    # median can only be computed on numerical attributes, we need to create a
+    # copy of the data without the text attribute ocean_proximity: 
+    housing_num = housing.drop("ocean_proximity", axis=1)
 
-    # # fit the imputer instance to the training data using the fit() method
-    # imputer.fit(housing_num)
-    # # The imputer has simply computed the median of each attribute and stored the result
-    # # in its statistics_ instance variable
-    # print(imputer.statistics_)
-    # print(housing_num.median().values)
+    # fit the imputer instance to the training data using the fit() method
+    imputer.fit(housing_num)
+    # The imputer has simply computed the median of each attribute and stored the result
+    # in its statistics_ instance variable
+    print(imputer.statistics_)
+    print(housing_num.median().values)
 
-    # # use this “trained” imputer to transform the training set by replacing
-    # # missing values by the learned medians:
-    # X = imputer.transform(housing_num)
-    # # result is a plain Numpy array containing the transformed features.
+    # use this “trained” imputer to transform the training set by replacing
+    # missing values by the learned medians:
+    X = imputer.transform(housing_num)
+    # result is a plain Numpy array containing the transformed features.
 
-    # # back into a Pandas DataFrame
-    # housing_tr = pd.DataFrame(X, columns=housing_num.columns)
-    # housing_tr.info()
-    # print(housing_tr.describe())
+    # back into a Pandas DataFrame
+    housing_tr = pd.DataFrame(X, columns=housing_num.columns)
+    housing_tr.info()
+    print(housing_tr.describe())
 
-    # # Scikit-Learn Design
-    # # Consistency
-    # # — Estimators
-    # # — Transformers
-    # # — Predictors
-    # # Inspection
-    # #   All the estimator’s hyperparameters are accessible directly via public
-    # #   instance variables (e.g., imputer.strategy), and all the estimator’s learned
-    # #   parameters are also accessible via public instance variables with an underscore
-    # #   suffix (e.g., imputer.statistics_)
-    # # Nonproliferation of classes.
-    # # Composition
-    # # Sensible defaults
+    # Scikit-Learn Design
+    # Consistency
+    # — Estimators
+    # — Transformers
+    # — Predictors
+    # Inspection
+    #   All the estimator’s hyperparameters are accessible directly via public
+    #   instance variables (e.g., imputer.strategy), and all the estimator’s learned
+    #   parameters are also accessible via public instance variables with an underscore
+    #   suffix (e.g., imputer.statistics_)
+    # Nonproliferation of classes.
+    # Composition
+    # Sensible defaults
 
+
+
+    # --------------------------------------------------
     # Handling Text and Categorical Attributes
     # --------------------------------------------------
 
@@ -317,6 +333,139 @@ if __name__ == "__main__":
     # print(housing_cat_1hot)
     # # this returns a dense NumPy array by default. You can get a sparse matrix
     # # instead by passing sparse_output=True to the LabelBinarizer constructor.
+
+
+
+    # --------------------------------------------------
+    # Custom Transformers
+    # --------------------------------------------------
+
+    # created class, implement three methods: fit() (returning self), transform(), and fit_transform()
+    # get the last one for free by simply adding TransformerMixin as a base class. Also, if add BaseEstimator 
+    # as a base class (and avoid *args and **kargs in your constructor)  will get
+    # two extra methods (get_params() and set_params()) that will be useful for auto‐
+    # matic hyperparameter tuning.
+    from sklearn.base import BaseEstimator, TransformerMixin
+
+    rooms_ix, bedrooms_ix, population_ix, household_ix = 3,4,5,6
+
+    class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
+        def __init__(self, add_bedrooms_per_room = True): #no args, no kargs
+            self.add_bedrooms_per_room = add_bedrooms_per_room
+
+        def fit(self, X, y=None):
+            return self # nothing else to do
+
+        def transform(self, X, y=None):
+            rooms_per_household = X[:, rooms_ix]/X[:, household_ix]
+            population_per_household = X[:, population_ix]/X[:, household_ix]
+            if self.add_bedrooms_per_room :
+                bedrooms_per_room= X[:, bedrooms_ix]/X[:, rooms_ix]
+                return np.c_[X, rooms_per_household, population_per_household, bedrooms_per_room]
+            else:
+                return np.c_[X, rooms_per_household, population_per_household]
+
+    attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
+    housing_extra_attribs = attr_adder.transform(housing.values)
+
+
+
+    # # --------------------------------------------------
+    # # Feature Scaling
+    # # --------------------------------------------------
+
+    # # There are two common ways to get all attributes to have the same scale: min-max
+    # # scaling and standardization.
+
+    # # Min-max scaling (many people call this normalization) is quite simple: values are
+    # # shifted and rescaled so that they end up ranging from 0 to 1. We do this by subtract‐
+    # # ing the min value and dividing by the max minus the min. Scikit-Learn provides a
+    # # transformer called MinMaxScaler for this. It has a feature_range hyperparameter
+    # # that lets you change the range if you don’t want 0–1 for some reason.
+
+    # # Standardization is quite different: first it subtracts the mean value (so standardized
+    # # values always have a zero mean), and then it divides by the variance so that the result‐
+    # # ing distribution has unit variance
+    # # Scikit-Learn provides a transformer called StandardScaler for standardization.
+    # # X_new = (X - mean)/Std
+
+
+
+    # --------------------------------------------------
+    # Transformation Pipelines
+    # --------------------------------------------------
+
+    # The Pipeline constructor takes a list of name/estimator pairs defining a sequence of
+    # steps. All but the last estimator must be transformers (i.e., they must have a
+    # fit_transform() method)
+
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler, LabelBinarizer
+    from sklearn.impute import SimpleImputer 
+
+    # num_pipeline = Pipeline([
+    #     ('imputer', Imputer(strategy='median')),
+    #     ('attribs_adder', Combined AttributesAdder()),
+    #     ('std_scaler', StandardScaler()),])
+
+    num_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy="median")),
+        ('attribs_adder', CombinedAttributesAdder()),
+        ('std_scaler', StandardScaler()),
+    ])
+    housing_num_tr = num_pipeline.fit_transform(housing_num)
+
+    # new class
+    class NewLabelBinarizer(LabelBinarizer):
+        def fit(self, X, y=None):
+            return super(NewLabelBinarizer, self).fit(X)
+        def transform(self, X, y=None):
+            return super(NewLabelBinarizer, self).transform(X)
+        def fit_transform(self, X, y=None):
+            return super(NewLabelBinarizer, self).fit(X).transform(X)
+
+    # simple custom transformer to handle Pandas DataFrames
+    from sklearn.base import BaseEstimator, TransformerMixin
+
+    class DataFrameSelector(BaseEstimator, TransformerMixin):
+        def __init__(self, attribute_names):
+            self.attribute_names = attribute_names
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X):
+            return X[self.attribute_names].values
+
+    # FeatureUnion class join transformations into a single pipeline
+    from sklearn.pipeline import FeatureUnion
+
+    num_attribs = list(housing_num)
+    cat_attribs = ['ocean_proximity']
+
+    num_pipeline = Pipeline([
+        ('selector', DataFrameSelector(num_attribs)),
+        ('imputer',SimpleImputer(strategy='median')),
+        ('attribs_adder', CombinedAttributesAdder()),
+        ('std_scaler', StandardScaler()),
+    ])
+
+    cat_pipeline = Pipeline([
+            ('selector', DataFrameSelector(cat_attribs)),
+            ('label_binarizer', NewLabelBinarizer()),        
+    ])
+
+    full_pipeline = FeatureUnion(transformer_list=[
+            ('num_pipeline', num_pipeline),
+            ('cat_pipeline', cat_pipeline), 
+    ])
+
+    housing_prepared = full_pipeline.fit_transform(housing)
+    print(housing_prepared)
+
+    
+
+
+
+
 
 
 
